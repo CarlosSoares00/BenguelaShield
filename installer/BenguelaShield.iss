@@ -63,10 +63,11 @@ Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 
 [Code]
 function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  ResultCode: Integer;
 begin
   Result := '';
-  // Kill existing process
-  Exec(ExpandConstant('{app}\BenguelaShield.exe'), '--kill', '', SW_HIDE, ewWaitUntilTerminated);
+  Exec(ExpandConstant('{app}\BenguelaShield.exe'), '--kill', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
@@ -98,15 +99,13 @@ procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   ResultCode: Integer;
 begin
-  if CurUninstallStep = usAppMutex then
-  begin
-    if FileExists(ExpandConstant('{app}\BenguelaShieldService.exe')) then
-      Exec(ExpandConstant('{app}\BenguelaShieldService.exe'), 'stop', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-  end;
   if CurUninstallStep = usUninstall then
   begin
     if FileExists(ExpandConstant('{app}\BenguelaShieldService.exe')) then
+    begin
+      Exec(ExpandConstant('{app}\BenguelaShieldService.exe'), 'stop', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
       Exec(ExpandConstant('{app}\BenguelaShieldService.exe'), 'remove', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    end;
     RegDeleteValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Run', 'BenguelaShield');
   end;
 end;

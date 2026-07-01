@@ -3,15 +3,22 @@
 from __future__ import annotations
 
 import os
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+
+
+def _data_dir() -> Path:
+    if getattr(sys, 'frozen', False):
+        return Path(os.environ.get('PROGRAMDATA', r'C:\ProgramData')) / 'BenguelaShield'
+    return Path(__file__).resolve().parent.parent.parent
 
 
 @dataclass
 class AntiRansomConfig:
     """Configurações do módulo anti-ransomware."""
 
-    base_dir: Path = field(default_factory=lambda: Path(__file__).resolve().parent.parent.parent)
+    base_dir: Path = field(default_factory=lambda: _data_dir())
 
     backup_dir: Path = field(default=None)
     backup_max_size_mb: int = 500

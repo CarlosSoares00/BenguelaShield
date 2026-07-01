@@ -1,9 +1,16 @@
-"""Configurações do módulo de ferramentas."""
+"""Configuracoes do modulo de ferramentas."""
+import os
+import sys
 from pathlib import Path
 
-LOG_FILE = Path(__file__).parent.parent.parent / "logs" / "tools.log"
-ADMIN_PASSWORD_HASH_FILE = Path(__file__).parent.parent.parent / "config" / "admin_hash.json"
-EXCEPTIONS_FILE = Path(__file__).parent.parent.parent / "config" / "exceptions.json"
+if getattr(sys, 'frozen', False):
+    _DATA = Path(os.environ.get('PROGRAMDATA', r'C:\ProgramData')) / 'BenguelaShield'
+else:
+    _DATA = Path(__file__).parent.parent.parent
+
+LOG_FILE = _DATA / "logs" / "tools.log"
+ADMIN_PASSWORD_HASH_FILE = _DATA / "config" / "admin_hash.json"
+EXCEPTIONS_FILE = _DATA / "config" / "exceptions.json"
 
 USB_MALWARE_FILES = [
     "autorun.inf", "*.exe", "*.vbs", "*.bat", "*.cmd",

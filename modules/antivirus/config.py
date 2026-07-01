@@ -44,13 +44,14 @@ class AntiVirusConfig:
     def __post_init__(self) -> None:
         base = self.base_dir
         _frozen = getattr(sys, 'frozen', False)
+        _data = Path(os.environ.get('PROGRAMDATA', r'C:\ProgramData')) / 'BenguelaShield' if _frozen else base
 
         if self.engine_dir is None:
             self.engine_dir = base / "engine" if _frozen else base / "engine" / "clamav" / "x64"
         if self.quarantine_dir is None:
-            self.quarantine_dir = base / "quarantine"
+            self.quarantine_dir = _data / "quarantine"
         if self.db_path is None:
-            self.db_path = base / "config" / "benguelashield.db"
+            self.db_path = _data / "config" / "benguelashield.db"
         if self.freshclam_config is None:
             self.freshclam_config = base / "config" / "freshclam.conf"
         if self.freshclam_binary is None:

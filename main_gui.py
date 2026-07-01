@@ -12,7 +12,10 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt
 import logging
 
-log_dir = os.path.join(APPLICATION_PATH, 'logs')
+if getattr(sys, 'frozen', False):
+    log_dir = os.path.join(os.environ.get('PROGRAMDATA', r'C:\ProgramData'), 'BenguelaShield', 'logs')
+else:
+    log_dir = os.path.join(APPLICATION_PATH, 'logs')
 os.makedirs(log_dir, exist_ok=True)
 logging.basicConfig(
     filename=os.path.join(log_dir, 'benguelashield.log'),

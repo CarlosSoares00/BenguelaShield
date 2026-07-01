@@ -236,6 +236,7 @@ import threading
 
 
 def _configurar_logging() -> None:
+    import traceback
     programdata = os.environ.get("PROGRAMDATA", r"C:\ProgramData")
     log_dir = Path(programdata) / "BenguelaShield" / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -248,6 +249,18 @@ def _configurar_logging() -> None:
     logging.root.addHandler(handler)
     logging.root.addHandler(logging.StreamHandler())
     logging.root.setLevel(logging.INFO)
+
+    def _crash_hook(exc_type, exc_value, exc_tb):
+        tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
+        logging.getLogger("BenguelaShield").critical("CRASH: %s\n%s", exc_type.__name__, tb)
+
+    def _thread_crash_hook(args):
+        if args.exc_value:
+            tb = "".join(traceback.format_exception(args.exc_type, args.exc_value, args.exc_traceback))
+            logging.getLogger("BenguelaShield").critical("CRASH THREAD: %s\n%s", args.thread_name, tb)
+
+    sys.excepthook = _crash_hook
+    threading.excepthook = _thread_crash_hook
 
 
 if __name__ == "__main__":

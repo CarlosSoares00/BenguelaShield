@@ -100,11 +100,23 @@ class DatabaseManager:
         self._conn.row_factory = sqlite3.Row
         self._conn.execute("PRAGMA journal_mode=WAL")
         self._conn.executescript(_SCHEMA_SQL)
+        self._migrate()
         self._conn.commit()
 
     def close(self) -> None:
-        """Fecha a ligação à base de dados."""
+        """Fecha a ligacao a base de dados."""
         self._conn.close()
+
+    def _migrate(self) -> None:
+        """Migracao de schema entre versoes."""
+        version = self._conn.execute("PRAGMA user_version").fetchone()[0]
+        if version < 1:
+            self._conn.execute("ALTER TABLE threats ADD COLUMN source TEXT DEFAULT 'local'")
+            self._conn.execute("PRAGMA user_version=1")
+        if version < 2:
+            self._conn.execute("CREATE INDEX IF NOT EXISTS idx_threats_timestamp ON threats(timestamp)")
+            self._conn.execute("CREATE INDEX IF NOT EXISTS idx_threats_filepath ON threats(filepath)")
+            self._conn.execute("PRAGMA user_version=2")
 
     def log_threat(
         self,

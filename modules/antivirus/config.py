@@ -156,3 +156,23 @@ class AntiVirusConfig:
             kwargs["quick_scan_paths"] = data["quick_scan_paths"]
 
         return cls(**kwargs)
+
+    def save_to_file(self, path: str | Path | None = None) -> bool:
+        """Persiste a configuracao actual num ficheiro JSON."""
+        import sys
+        if path is None:
+            data_dir = Path(os.environ.get('PROGRAMDATA', r'C:\ProgramData')) / 'BenguelaShield' if getattr(sys, 'frozen', False) else self.base_dir
+            path = data_dir / "config" / "benguelashield.json"
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        data = {
+            "clamd_host": self.clamd_host,
+            "clamd_port": self.clamd_port,
+            "scan_timeout": self.scan_timeout,
+            "quick_scan_paths": self.quick_scan_paths,
+        }
+        try:
+            path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+            return True
+        except Exception:
+            return False

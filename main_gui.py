@@ -1,5 +1,5 @@
 # BenguelaShield - Ponto de Entrada da Interface Grafica
-import sys, os, logging, logging.handlers
+import sys, os, logging, logging.handlers, traceback
 
 if getattr(sys, 'frozen', False):
     APPLICATION_PATH = os.path.dirname(sys.executable)
@@ -26,6 +26,23 @@ handler = logging.handlers.RotatingFileHandler(
 handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(name)s: %(message)s'))
 logging.root.addHandler(handler)
 logging.root.setLevel(logging.INFO)
+logger = logging.getLogger("BenguelaShield")
+
+
+def _crash_hook(exc_type, exc_value, exc_tb):
+    tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
+    logger.critical("CRASH NAO TRATADO: %s\n%s", exc_type.__name__, tb)
+
+
+def _thread_crash_hook(args):
+    if args.exc_value:
+        tb = "".join(traceback.format_exception(args.exc_type, args.exc_value, args.exc_traceback))
+        logger.critical("CRASH EM THREAD: %s\n%s", args.thread_name, tb)
+
+
+sys.excepthook = _crash_hook
+threading.excepthook = _thread_crash_hook
+
 
 def main():
     QApplication.setHighDpiScaleFactorRoundingPolicy(

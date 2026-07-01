@@ -208,7 +208,18 @@ class ClamAVScanHandler(FileSystemEventHandler):
                     self.on_threat(filepath, threat, None)
 
     def _clamd_scan(self, filepath: str) -> dict | None:
-        """Analisa ficheiro usando clamscan.exe."""
+        """Analisa ficheiro usando clamd INSCAN (rapido) com fallback para clamscan.exe."""
+        try:
+            from modules.antivirus.scanner import ClamAVScanner
+            scanner = ClamAVScanner(self.config)
+            result = scanner.scan_file(filepath)
+            if result.status == "FOUND":
+                return {"clean": False, "threat": result.threat_name or "UNKNOWN"}
+            elif result.status == "OK":
+                return {"clean": True, "threat": None}
+        except Exception:
+            pass
+
         import subprocess
         clamscan = self.config.clamscan_binary
         if not clamscan.exists():
@@ -216,7 +227,7 @@ class ClamAVScanHandler(FileSystemEventHandler):
 
         try:
             proc = subprocess.run(
-                [str(clamscan), "--no-summary", filepath],
+                [str(clamscan), "--force-to-disk", "--no-summary", filepath],
                 capture_output=True, text=True, timeout=60,
                 encoding="utf-8", errors="replace",
             )
@@ -225,10 +236,7 @@ class ClamAVScanHandler(FileSystemEventHandler):
                 line = line.strip()
                 if line.endswith(" FOUND"):
                     parts = line.rsplit(": ", 1)
-                    if len(parts) == 2:
-                        threat = parts[1].replace(" FOUND", "").strip()
-                    else:
-                        threat = "UNKNOWN"
+                    threat = parts[1].replace(" FOUND", "").strip() if len(parts) == 2 else "UNKNOWN"
                     return {"clean": False, "threat": threat}
                 elif line.endswith(": OK"):
                     return {"clean": True, "threat": None}

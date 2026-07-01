@@ -127,7 +127,10 @@ class SettingsPage(QWidget):
     def _guardar(self) -> None:
         self.config.scan_timeout = self._spin_timeout.value()
         self.config.clamd_port = self._spin_porta.value()
-        QMessageBox.information(self, "Guardado", "Definições guardadas com sucesso.")
+        if self.config.save_to_file():
+            QMessageBox.information(self, "Guardado", "Definicoes guardadas com sucesso.")
+        else:
+            QMessageBox.warning(self, "Erro", "Falha ao guardar definicoes em disco.")
 
     def _repor(self) -> None:
         self._spin_timeout.setValue(300)

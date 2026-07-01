@@ -1,5 +1,5 @@
 # BenguelaShield - Ponto de Entrada da Interface Grafica
-import sys, os
+import sys, os, logging, logging.handlers
 
 if getattr(sys, 'frozen', False):
     APPLICATION_PATH = os.path.dirname(sys.executable)
@@ -10,18 +10,22 @@ else:
 
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt
-import logging
 
 if getattr(sys, 'frozen', False):
     log_dir = os.path.join(os.environ.get('PROGRAMDATA', r'C:\ProgramData'), 'BenguelaShield', 'logs')
 else:
     log_dir = os.path.join(APPLICATION_PATH, 'logs')
 os.makedirs(log_dir, exist_ok=True)
-logging.basicConfig(
-    filename=os.path.join(log_dir, 'benguelashield.log'),
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+
+handler = logging.handlers.RotatingFileHandler(
+    os.path.join(log_dir, 'benguelashield.log'),
+    maxBytes=10 * 1024 * 1024,
+    backupCount=5,
+    encoding='utf-8',
 )
+handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(name)s: %(message)s'))
+logging.root.addHandler(handler)
+logging.root.setLevel(logging.INFO)
 
 def main():
     QApplication.setHighDpiScaleFactorRoundingPolicy(

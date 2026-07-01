@@ -12,6 +12,7 @@ Remover:    python benguelashield_service.py remove
 from __future__ import annotations
 
 import logging
+import logging.handlers
 import hmac
 import os
 import secrets
@@ -240,14 +241,13 @@ def _configurar_logging() -> None:
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file = log_dir / "service.log"
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        handlers=[
-            logging.FileHandler(str(log_file), encoding="utf-8"),
-            logging.StreamHandler(),
-        ],
+    handler = logging.handlers.RotatingFileHandler(
+        str(log_file), maxBytes=10*1024*1024, backupCount=5, encoding="utf-8"
     )
+    handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
+    logging.root.addHandler(handler)
+    logging.root.addHandler(logging.StreamHandler())
+    logging.root.setLevel(logging.INFO)
 
 
 if __name__ == "__main__":

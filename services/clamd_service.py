@@ -116,25 +116,36 @@ class ClamDService:
                     logger.error("Erro ao reiniciar clamd: %s", e)
 
     def _criar_config(self) -> str:
-        """Cria ficheiro de configuração do clamd."""
-        db_dir = self.config.engine_dir.parent / "db"
+        """Cria ficheiro de configuracao do clamd."""
+        import sys
+        data_dir = Path(os.environ.get('PROGRAMDATA', r'C:\ProgramData')) / 'BenguelaShield' if getattr(sys, 'frozen', False) else self.config.base_dir
+
+        db_dir = data_dir / "db"
         db_dir.mkdir(parents=True, exist_ok=True)
 
-        log_dir = self.config.base_dir / "logs"
+        log_dir = data_dir / "logs"
         log_dir.mkdir(parents=True, exist_ok=True)
 
-        config_path = self.config.base_dir / "config" / "clamd_runtime.conf"
+        config_path = data_dir / "config" / "clamd_runtime.conf"
         config_path.parent.mkdir(parents=True, exist_ok=True)
 
-        content = f"""# BenguelaShield — clamd runtime config
+        # Find YARA rules relative to engine or _internal
+        yara_dir = self.config.base_dir / "modules" / "yara_engine" / "rules" / "benguelashield"
+        if not yara_dir.exists():
+            internal = self.config.base_dir / "_internal" / "modules" / "yara_engine" / "rules" / "benguelashield"
+            if internal.exists():
+                yara_dir = internal
+
+        content = f"""# BenguelaShield - clamd runtime config
 TCPSocket {self.config.clamd_port}
 TCPAddr {self.config.clamd_host}
 MaxThreads 4
 DatabaseDirectory {db_dir}
 LogFile {log_dir / 'clamd.log'}
 LogTime yes
-PidFile {self.config.base_dir / 'config' / 'clamd.pid'}
+PidFile {data_dir / 'config' / 'clamd.pid'}
 Foreground yes
+YaraRulesDir {yara_dir}
 """
         config_path.write_text(content, encoding="utf-8")
         return str(config_path)

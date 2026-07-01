@@ -36,15 +36,12 @@ if not exist "dist\BenguelaShield\config" mkdir "dist\BenguelaShield\config"
 if not exist "dist\BenguelaShield\db" mkdir "dist\BenguelaShield\db"
 if not exist "dist\BenguelaShield\engine\certs" mkdir "dist\BenguelaShield\engine\certs"
 
-:: Copy ClamAV binaries + DLLs + certs
-copy /y "engine\clamav\x64\*.exe" "dist\BenguelaShield\engine\" >nul
-copy /y "engine\clamav\x64\*.dll" "dist\BenguelaShield\engine\" >nul
+:: Copy ClamAV binaries + DLLs + certs (excluir .lib, .pdb, docs)
+for %%f in ("engine\clamav\x64\*.exe" "engine\clamav\x64\*.dll") do copy /y "%%f" "dist\BenguelaShield\engine\" >nul
 xcopy /s /e /y "engine\clamav\x64\certs" "dist\BenguelaShield\engine\certs\" >nul
 
-:: Copy configs
-copy /y "config\clamd_runtime.conf" "dist\BenguelaShield\config\" >nul 2>nul
-copy /y "config\freshclam.conf" "dist\BenguelaShield\config\" >nul 2>nul
-copy /y "engine\clamav\x64\freshclam.conf" "dist\BenguelaShield\config\" >nul 2>nul
+:: Copy configs (NO copy clamd_runtime.conf — generated at install time)
+if not exist "dist\BenguelaShield\config" mkdir "dist\BenguelaShield\config"
 
 :: Copy DB
 copy /y "engine\clamav\db\*.cvd" "dist\BenguelaShield\db\" >nul 2>nul
@@ -54,19 +51,21 @@ copy /y "engine\clamav\db\freshclam.dat" "dist\BenguelaShield\db\" >nul 2>nul
 copy /y "dist\BenguelaShieldService\BenguelaShieldService.exe" "dist\BenguelaShield\" >nul
 echo   OK
 
-:: Create freshclam.conf for install path
-echo.
-echo [5/6] Criar freshclam.conf...
-echo DatabaseDirectory {app}\db > "_freshclam_template.conf"
-echo DatabaseMirror database.clamav.net >> "_freshclam_template.conf"
-echo DNSDatabaseInfo current.cvd.clamav.net >> "_freshclam_template.conf"
-echo MaxAttempts 3 >> "_freshclam_template.conf"
+:: Remove stale artifacts
+if exist "dist\BenguelaShield\config\clamd.pid" del /q "dist\BenguelaShield\config\clamd.pid" >nul 2>nul
+if exist "dist\BenguelaShield\config\benguelashield.db" del /q "dist\BenguelaShield\config\benguelashield.db" >nul 2>nul
+if exist "_freshclam_template.conf" del /q "_freshclam_template.conf" >nul
 echo   OK
 
 :: Build installer
 echo.
-echo [6/6] Compilar instalador...
-"C:\Users\carlo\AppData\Local\Programs\Inno Setup 6\ISCC.exe" "installer\BenguelaShield.iss"
+echo [5/5] Compilar instalador...
+set "ISCC="
+if exist "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" set "ISCC=C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+if exist "C:\Program Files\Inno Setup 6\ISCC.exe" set "ISCC=C:\Program Files\Inno Setup 6\ISCC.exe"
+if exist "C:\Users\carlo\AppData\Local\Programs\Inno Setup 6\ISCC.exe" set "ISCC=C:\Users\carlo\AppData\Local\Programs\Inno Setup 6\ISCC.exe"
+if "%ISCC%"=="" (echo ERRO: Inno Setup nao encontrado! & pause & exit /b 1)
+"%ISCC%" "installer\BenguelaShield.iss"
 if errorlevel 1 (echo ERRO: Inno Setup falhou! & pause & exit /b 1)
 
 echo.

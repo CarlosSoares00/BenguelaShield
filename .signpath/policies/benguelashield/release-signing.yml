@@ -1,0 +1,6 @@
+# SignPath policy for BenguelaShield release signing
+github-policies:
+  runners:
+    require_github_hosted: true
+  build:
+    disallow_reruns: true

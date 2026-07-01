@@ -1,5 +1,5 @@
 # BenguelaShield - Ponto de Entrada da Interface Grafica
-import sys, os, logging, logging.handlers, traceback
+import sys, os, logging, logging.handlers, threading, traceback
 
 if getattr(sys, 'frozen', False):
     APPLICATION_PATH = os.path.dirname(sys.executable)

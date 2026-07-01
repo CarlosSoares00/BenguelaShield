@@ -1,9 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
 """PyInstaller spec — BenguelaShield GUI"""
 import sys, os
+from PyInstaller.utils.hooks import collect_all
 
 block_cipher = None
 PROJECT_ROOT = os.path.abspath(os.path.join(SPEC, '..', '..'))
+
+sklearn_datas, sklearn_binaries, sklearn_hiddenimports = collect_all('sklearn')
 
 a = Analysis(
     [os.path.join(PROJECT_ROOT, 'main_gui.py')],
@@ -12,13 +15,13 @@ a = Analysis(
         (os.path.join(PROJECT_ROOT, 'engine', 'clamav', 'x64', 'clamscan.exe'), 'engine'),
         (os.path.join(PROJECT_ROOT, 'engine', 'clamav', 'x64', 'clamd.exe'), 'engine'),
         (os.path.join(PROJECT_ROOT, 'engine', 'clamav', 'x64', 'freshclam.exe'), 'engine'),
-    ],
+    ] + sklearn_binaries,
     datas=[
         (os.path.join(PROJECT_ROOT, 'config'), 'config'),
         (os.path.join(PROJECT_ROOT, 'modules', 'yara_engine', 'rules'), os.path.join('modules', 'yara_engine', 'rules')),
         (os.path.join(PROJECT_ROOT, 'modules', 'ai', 'models'), os.path.join('modules', 'ai', 'models')),
         (os.path.join(PROJECT_ROOT, 'setup_info.py'), '.'),
-    ],
+    ] + sklearn_datas,
     hiddenimports=[
         'PyQt6.QtWidgets', 'PyQt6.QtCore', 'PyQt6.QtGui',
         'PyQt6.sip',
@@ -26,12 +29,11 @@ a = Analysis(
         'win32security', 'win32service', 'win32serviceutil',
         'win32evtlog', 'win32timezone', 'servicemanager', 'pywintypes',
         'lightgbm', 'lief', 'numpy',
-        'sklearn', 'sklearn.ensemble', 'sklearn.ensemble._iforest',
         'yara', 'psutil',
         'watchdog', 'watchdog.observers', 'watchdog.events',
         'Crypto', 'Crypto.Cipher', 'Crypto.Cipher.AES', 'Crypto.Util.Padding',
         'requests', 'joblib',
-    ],
+    ] + sklearn_hiddenimports,
     excludes=['tkinter', 'matplotlib', 'PIL', 'scipy'],
     noarchive=False,
 )
@@ -50,8 +52,6 @@ exe = EXE(
     console=False,
     icon=os.path.join(PROJECT_ROOT, 'installer', 'assets', 'icon.ico'),
     version=os.path.join(PROJECT_ROOT, 'installer', 'version_info.py'),
-    uac_admin=True,
-    admin_auto_elevate=True,
 )
 
 coll = COLLECT(

@@ -1,0 +1,11 @@
+LICENCA PUBLICA GERAL GNU VERSAO 2
+
+Copyright (C) 2025 Administracao Municipal de Benguela
+
+Este software e distribuido sob a licenca GPLv2.
+
+Pode: usar, modificar, distribuir.
+Deve: manter a mesma licenca, disponibilizar codigo fonte.
+Nao pode: restringir acesso ao codigo, impor restricoes adicionais.
+
+Texto completo: https://www.gnu.org/licenses/pt-br/2.0.html

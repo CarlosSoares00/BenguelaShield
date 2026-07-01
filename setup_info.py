@@ -1,0 +1,5 @@
+APP_NAME = 'BenguelaShield'
+APP_VERSION = '1.0.0'
+APP_PUBLISHER = 'Administracao Municipal de Benguela'
+APP_URL = 'https://github.com/CarlosSoares00/BenguelaShield'
+APP_DESCRIPTION = 'Antivirus Open Source Municipal'

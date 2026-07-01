@@ -1,0 +1,16 @@
+﻿BENGUELA SHIELD - Antes de Instalar
+
+O que vai ser instalado:
+- Motor antivirus (ClamAV 3.6M assinaturas)
+- Motor YARA (23 regras)
+- Motor IA (LightGBM)
+- Proteccao em tempo real
+- Proteccao USB
+- Anti-ransomware
+- Interface grafica em portugues
+
+Requisitos:
+- Windows 10+ (64-bit)
+- 2 GB RAM minimo
+- 500 MB disco
+- Internet para actualizacoes

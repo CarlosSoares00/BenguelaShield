@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller spec - BenguelaShield GUI"""
+"""PyInstaller spec — BenguelaShield GUI"""
 import sys, os
 
 block_cipher = None
@@ -30,7 +30,7 @@ a = Analysis(
         'yara', 'psutil',
         'watchdog', 'watchdog.observers', 'watchdog.events',
         'Crypto', 'Crypto.Cipher', 'Crypto.Cipher.AES', 'Crypto.Util.Padding',
-        'requests',
+        'requests', 'joblib',
     ],
     excludes=['tkinter', 'matplotlib', 'PIL', 'scipy'],
     noarchive=False,
@@ -49,6 +49,9 @@ exe = EXE(
     upx=True,
     console=False,
     icon=os.path.join(PROJECT_ROOT, 'installer', 'assets', 'icon.ico'),
+    version=os.path.join(PROJECT_ROOT, 'installer', 'version_info.py'),
+    uac_admin=True,
+    admin_auto_elevate=True,
 )
 
 coll = COLLECT(

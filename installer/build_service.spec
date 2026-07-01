@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller spec - BenguelaShield Service"""
+"""PyInstaller spec — BenguelaShield Service"""
 import sys, os
 
 block_cipher = None
@@ -11,19 +11,21 @@ a = Analysis(
     binaries=[
         (os.path.join(PROJECT_ROOT, 'engine', 'clamav', 'x64', 'clamscan.exe'), 'engine'),
         (os.path.join(PROJECT_ROOT, 'engine', 'clamav', 'x64', 'clamd.exe'), 'engine'),
+        (os.path.join(PROJECT_ROOT, 'engine', 'clamav', 'x64', 'freshclam.exe'), 'engine'),
     ],
     datas=[
         (os.path.join(PROJECT_ROOT, 'config'), 'config'),
         (os.path.join(PROJECT_ROOT, 'modules', 'yara_engine', 'rules'), os.path.join('modules', 'yara_engine', 'rules')),
+        (os.path.join(PROJECT_ROOT, 'modules', 'ai', 'models'), os.path.join('modules', 'ai', 'models')),
     ],
     hiddenimports=[
         'win32serviceutil', 'win32service', 'win32event', 'win32timezone',
-        'servicemanager', 'pywintypes',
+        'win32evtlog', 'servicemanager', 'pywintypes',
         'psutil', 'watchdog', 'watchdog.observers', 'watchdog.events',
         'yara', 'lightgbm', 'lief', 'numpy',
-        'sklearn', 'sklearn.ensemble',
+        'sklearn', 'sklearn.ensemble', 'sklearn.ensemble._iforest',
         'Crypto', 'Crypto.Cipher', 'Crypto.Cipher.AES', 'Crypto.Util.Padding',
-        'requests',
+        'requests', 'joblib',
     ],
     excludes=['tkinter', 'matplotlib', 'PyQt6', 'PIL', 'scipy'],
     noarchive=False,
@@ -41,6 +43,7 @@ exe = EXE(
     strip=False,
     upx=True,
     console=True,
+    uac_admin=True,
 )
 
 coll = COLLECT(

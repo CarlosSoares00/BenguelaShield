@@ -12,8 +12,11 @@ Remover:    python benguelashield_service.py remove
 from __future__ import annotations
 
 import logging
+import hmac
 import os
+import secrets
 import sys
+import threading
 import time
 import socket
 from pathlib import Path
@@ -125,7 +128,11 @@ class BenguelaShieldService(win32serviceutil.ServiceFramework):
 
 
 class AlertServer:
-    """Servidor TCP local que envia alertas para a GUI."""
+    """Servidor TCP local que envia alertas para a GUI.
+
+    Usa shared-secret para autenticar clientes. O token e gerado
+    no arranque e passado a GUI via ficheiro partilhado.
+    """
 
     def __init__(self, config: AntiVirusConfig, db: DatabaseManager) -> None:
         self.config = config
@@ -135,9 +142,19 @@ class AlertServer:
         self._thread: threading.Thread | None = None
         self._clientes: list[socket.socket] = []
         self._lock = threading.Lock()
+        self._secret = secrets.token_hex(32)
+
+    def _write_secret(self) -> None:
+        """Escreve o token num ficheiro para a GUI ler."""
+        secret_file = self.config.base_dir / "config" / ".alert_secret"
+        if not getattr(sys, 'frozen', False):
+            secret_file = Path(os.environ.get('PROGRAMDATA', r'C:\ProgramData')) / 'BenguelaShield' / 'config' / '.alert_secret'
+        secret_file.parent.mkdir(parents=True, exist_ok=True)
+        secret_file.write_text(self._secret, encoding="utf-8")
 
     def iniciar(self) -> None:
         try:
+            self._write_secret()
             self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self._socket.bind(("127.0.0.1", self.config.clamd_port + 1))
@@ -164,11 +181,27 @@ class AlertServer:
                 self._socket.close()
             except Exception:
                 pass
+        secret_file = Path(os.environ.get('PROGRAMDATA', r'C:\ProgramData')) / 'BenguelaShield' / 'config' / '.alert_secret'
+        try:
+            secret_file.unlink(missing_ok=True)
+        except Exception:
+            pass
 
     def _aceitar_clientes(self) -> None:
         while not self._parar:
             try:
                 cliente, addr = self._socket.accept()
+                try:
+                    cliente.settimeout(5.0)
+                    token = cliente.recv(64).decode("utf-8", errors="ignore").strip()
+                    if not hmac.compare_digest(token, self._secret):
+                        logger.warning("Alert server: cliente com token invalido rejeitado")
+                        cliente.close()
+                        continue
+                except Exception:
+                    cliente.close()
+                    continue
+                cliente.settimeout(None)
                 with self._lock:
                     self._clientes.append(cliente)
             except socket.timeout:

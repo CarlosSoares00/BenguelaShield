@@ -48,7 +48,7 @@ class WinForce:
                 logger.warning("Erro ao verificar %s: %s", tool_key, e)
 
         try:
-            subprocess.Popen(tool["command"], shell=True)
+            subprocess.Popen([tool["command"]])
             result["opened"] = True
         except Exception as e:
             result["error"] = str(e)

@@ -33,7 +33,7 @@ class AntiVirusConfig:
     quarantine_dir: Path = field(default=None)
     db_path: Path = field(default=None)
 
-    quarantine_key: bytes = field(default_factory=lambda: secrets.token_bytes(32))
+    quarantine_key: bytes = field(default=None)
 
     freshclam_config: Path = field(default=None)
     freshclam_binary: Path = field(default=None)
@@ -77,7 +77,27 @@ class AntiVirusConfig:
 
         self.quarantine_dir.mkdir(parents=True, exist_ok=True)
 
+        if self.quarantine_key is None:
+            self.quarantine_key = self._load_or_create_quarantine_key(_data)
+
         self._apply_env_overrides()
+
+    def _load_or_create_quarantine_key(self, data_dir: Path) -> bytes:
+        """Carrega ou gera a chave AES de quarentena, persistida em disco."""
+        key_dir = data_dir / "config"
+        key_dir.mkdir(parents=True, exist_ok=True)
+        key_file = key_dir / "quarantine.key"
+        if key_file.exists():
+            try:
+                return key_file.read_bytes()
+            except Exception:
+                pass
+        key = secrets.token_bytes(32)
+        try:
+            key_file.write_bytes(key)
+        except Exception:
+            pass
+        return key
 
     def _apply_env_overrides(self) -> None:
         """Aplica variáveis de ambiente com prefixo BENGUELA_."""

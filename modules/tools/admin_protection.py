@@ -1,9 +1,10 @@
-"""Protecção por palavra-passe do BenguelaShield."""
+"""Proteccao por palavra-passe do BenguelaShield."""
 from __future__ import annotations
 import hashlib
 import hmac
 import json
 import logging
+import os
 import secrets
 import time
 from pathlib import Path
@@ -14,16 +15,24 @@ logger = logging.getLogger("BenguelaShield.Tools.AdminProtection")
 
 
 class AdminProtection:
-    """Protecção por password de administrador."""
+    """Proteccao por password de administrador com scrypt."""
 
     def __init__(self):
         self._hash_file = ADMIN_PASSWORD_HASH_FILE
         self._hash_file.parent.mkdir(parents=True, exist_ok=True)
+        self._authenticated = False
 
     def set_password(self, password: str) -> bool:
-        salt = secrets.token_hex(16)
-        h = hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
-        data = {"salt": salt, "hash": h, "created": time.strftime("%Y-%m-%dT%H:%M:%S")}
+        salt = secrets.token_bytes(32)
+        h = hashlib.scrypt(
+            password.encode("utf-8"), salt=salt, n=2**14, r=8, p=1, dklen=32
+        )
+        data = {
+            "salt": salt.hex(),
+            "hash": h.hex(),
+            "algo": "scrypt",
+            "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        }
         try:
             self._hash_file.write_text(json.dumps(data), encoding="utf-8")
             return True
@@ -36,8 +45,18 @@ class AdminProtection:
             return True
         try:
             data = json.loads(self._hash_file.read_text(encoding="utf-8"))
-            h = hashlib.sha256((data["salt"] + password).encode("utf-8")).hexdigest()
-            return hmac.compare_digest(h, data["hash"])
+            salt = bytes.fromhex(data["salt"])
+            stored_hash = bytes.fromhex(data["hash"])
+            algo = data.get("algo", "scrypt")
+
+            if algo == "scrypt":
+                h = hashlib.scrypt(
+                    password.encode("utf-8"), salt=salt, n=2**14, r=8, p=1, dklen=32
+                )
+            else:
+                h = hashlib.sha256((salt.hex() + password).encode("utf-8")).digest()
+
+            return hmac.compare_digest(h, stored_hash)
         except Exception:
             return False
 
@@ -48,12 +67,34 @@ class AdminProtection:
         if self.verify_password(current_password):
             try:
                 self._hash_file.unlink()
+                self._authenticated = False
                 return True
             except Exception:
                 return False
         return False
 
-    def require_password(self, action: str) -> bool:
+    def authenticate(self, password: str) -> bool:
+        """Autentica o utilizador e guarda o estado de sessao."""
         if not self.is_password_set():
+            self._authenticated = True
+            return True
+        if self.verify_password(password):
+            self._authenticated = True
             return True
         return False
+
+    def is_authenticated(self) -> bool:
+        """Verifica se o utilizador esta autenticado nesta sessao."""
+        if not self.is_password_set():
+            return True
+        return self._authenticated
+
+    def logout(self) -> None:
+        """Termina a sessao de autenticacao."""
+        self._authenticated = False
+
+    def require_password(self, action: str) -> bool:
+        """Verifica autenticacao. Retorna True se acesso permitido."""
+        if not self.is_password_set():
+            return True
+        return self._authenticated

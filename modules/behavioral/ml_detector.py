@@ -6,6 +6,7 @@ anómalos em processos. Aprende o que é "normal" e detecta desvios.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import pickle
 from pathlib import Path
@@ -39,7 +40,11 @@ class MLDetector:
         self._load_model()
 
     def _load_model(self) -> bool:
-        """Carrega modelo Isolation Forest do disco."""
+        """Carrega modelo Isolation Forest do disco.
+
+        Usa joblib quando disponivel (mais seguro que pickle).
+        Em fallback, valida tamanho maximo antes de carregar.
+        """
         if IsolationForest is None:
             logger.error("scikit-learn não instalado")
             return False
@@ -48,10 +53,23 @@ class MLDetector:
             logger.warning("Modelo comportamental não encontrado: %s", ML_MODEL_PATH)
             return False
 
+        max_size = 50 * 1024 * 1024
+        if ML_MODEL_PATH.stat().st_size > max_size:
+            logger.error("Modelo comportamental excede 50MB — possivel ficheiro corrompido")
+            return False
+
+        try:
+            import joblib
+            self.model = joblib.load(ML_MODEL_PATH)
+            logger.info("Modelo comportamental carregado (joblib): %s", ML_MODEL_PATH)
+            return True
+        except ImportError:
+            pass
+
         try:
             with open(ML_MODEL_PATH, "rb") as f:
                 self.model = pickle.load(f)
-            logger.info("Modelo comportamental carregado: %s", ML_MODEL_PATH)
+            logger.info("Modelo comportamental carregado (pickle fallback): %s", ML_MODEL_PATH)
             return True
         except Exception as e:
             logger.error("Erro ao carregar modelo comportamental: %s", e)

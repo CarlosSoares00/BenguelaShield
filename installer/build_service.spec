@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-
+"""PyInstaller spec - BenguelaShield Service"""
 import sys, os
 
 block_cipher = None
@@ -14,16 +14,41 @@ a = Analysis(
     ],
     datas=[
         (os.path.join(PROJECT_ROOT, 'config'), 'config'),
-        (os.path.join(PROJECT_ROOT, 'modules', 'yara_engine', 'rules'), os.path.join('modules', 'yara_engine', 'rules')),\n    ],
+        (os.path.join(PROJECT_ROOT, 'modules', 'yara_engine', 'rules'), os.path.join('modules', 'yara_engine', 'rules')),
+    ],
     hiddenimports=[
         'win32serviceutil', 'win32service', 'win32event', 'win32timezone',
-        'servicemanager', 'pywintypes', 'psutil', 'watchdog', 'yara',
-        'lightgbm', 'lief', 'numpy', 'sklearn', 'Crypto',
+        'servicemanager', 'pywintypes',
+        'psutil', 'watchdog', 'watchdog.observers', 'watchdog.events',
+        'yara', 'lightgbm', 'lief', 'numpy',
+        'sklearn', 'sklearn.ensemble',
+        'Crypto', 'Crypto.Cipher', 'Crypto.Cipher.AES', 'Crypto.Util.Padding',
+        'requests',
     ],
-    excludes=['tkinter', 'matplotlib', 'PyQt6', 'PIL'],
+    excludes=['tkinter', 'matplotlib', 'PyQt6', 'PIL', 'scipy'],
     noarchive=False,
 )
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
-exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name='BenguelaShieldService', debug=False, strip=False, upx=True, console=True)
-coll = COLLECT(exe, a.binaries, a.zipfiles, a.datas, strip=False, upx=True, name='BenguelaShieldService')
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    [],
+    exclude_binaries=True,
+    name='BenguelaShieldService',
+    debug=False,
+    strip=False,
+    upx=True,
+    console=True,
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    name='BenguelaShieldService',
+)

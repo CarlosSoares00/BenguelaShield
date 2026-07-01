@@ -22,6 +22,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern
 ShowLanguageDialog=yes
+CloseApplications=yes
 
 [Languages]
 Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
@@ -31,11 +32,17 @@ Name: "desktopicon"; Description: "Criar atalho no Ambiente de Trabalho"; GroupD
 Name: "startup"; Description: "Iniciar BenguelaShield com o Windows"; GroupDescription: "Arranque:"
 
 [Files]
+; Executavel principal
 Source: "..\dist\BenguelaShield\BenguelaShield.exe"; DestDir: "{app}"; Flags: ignoreversion
+; Servico Windows
 Source: "..\dist\BenguelaShield\BenguelaShieldService.exe"; DestDir: "{app}"; Flags: ignoreversion
+; Motor ClamAV
 Source: "..\dist\BenguelaShield\engine\*"; DestDir: "{app}\engine"; Flags: ignoreversion recursesubdirs
-Source: "..\dist\BenguelaShield\modules\*"; DestDir: "{app}\modules"; Flags: ignoreversion recursesubdirs
-Source: "..\dist\BenguelaShield\config\*"; DestDir: "{app}\config"; Flags: ignoreversion skipifsourcedoesntexist
+; Configuracoes
+Source: "..\dist\BenguelaShield\config\*"; DestDir: "{app}\config"; Flags: ignoreversion skipifsourcedoesntexist recursesubdirs
+; Runtime PyInstaller (_internal)
+Source: "..\dist\BenguelaShield\_internal\*"; DestDir: "{app}\_internal"; Flags: ignoreversion recursesubdirs
+; Documentacao
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion isreadme
 Source: "license_pt.txt"; DestDir: "{app}"; Flags: ignoreversion
 

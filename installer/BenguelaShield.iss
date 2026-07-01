@@ -98,46 +98,26 @@ begin
   Result := (Version.Major >= 10);
 end;
 
-function HasEnoughDiskSpace: Boolean;
-var
-  FreeSpace: Int64;
-begin
-  FreeSpace := DiskFree(0);
-  Result := (FreeSpace > 500 * 1024 * 1024); // 500 MB
-end;
-
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   ResultCode: Integer;
-  MsgResult: Integer;
 begin
   Result := '';
 
-  // Verificar Windows 10+
   if not IsWindows10OrLater then
   begin
     Result := 'O BenguelaShield requer Windows 10 (versao 1809) ou superior.';
     Exit;
   end;
 
-  // Verificar espaco em disco
-  if not HasEnoughDiskSpace then
-  begin
-    Result := 'Espaco em disco insuficiente. Necessario: 500 MB minimo.';
-    Exit;
-  end;
-
-  // Terminar GUI existente
   Exec(ExpandConstant('{app}\BenguelaShield.exe'), '--kill', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
-  // Parar e remover servico existente
   if FileExists(ExpandConstant('{app}\BenguelaShieldService.exe')) then
   begin
     Exec(ExpandConstant('{app}\BenguelaShieldService.exe'), 'stop', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     Exec(ExpandConstant('{app}\BenguelaShieldService.exe'), 'remove', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   end;
 
-  // Aguardar ficheiros libertados
   Sleep(2000);
 end;
 
@@ -187,10 +167,10 @@ begin
     // 3. Copiar assinaturas para ProgramData (se ainda nao existirem)
     if not DirExists(DataDir + '\db') then
     begin
-      CreateDir(DataDir + '\db', 0);
-      FileCopy(AppDir + '\db\main.cvd', DataDir + '\db\main.cvd', False);
-      FileCopy(AppDir + '\db\daily.cld', DataDir + '\db\daily.cld', False);
-      FileCopy(AppDir + '\db\bytecode.cvd', DataDir + '\db\bytecode.cvd', False);
+      CreateDir(DataDir + '\db');
+      CopyFile(AppDir + '\db\main.cvd', DataDir + '\db\main.cvd', False);
+      CopyFile(AppDir + '\db\daily.cld', DataDir + '\db\daily.cld', False);
+      CopyFile(AppDir + '\db\bytecode.cvd', DataDir + '\db\bytecode.cvd', False);
     end;
 
     // 4. Registar e iniciar servico Windows
@@ -202,7 +182,7 @@ begin
     end;
 
     // 5. Actualizar assinaturas (se tarefa selecionada)
-    if IsTaskSelected('updatedefinitions') then
+    if WizardIsTaskSelected('updatedefinitions') then
     begin
       if FileExists(AppDir + '\engine\freshclam.exe') then
       begin
@@ -274,8 +254,7 @@ Type: dirifempty; Name: "{commonappdata}\BenguelaShield"
 ; Portuguese customizations
 BeveledLabel=BenguelaShield v1.0.0 — Administracao Municipal de Benguela
 WelcomeLabel1=Bem-vindo ao Assistente de Instalacao do BenguelaShield
-WelcomeLabel2=BenguelaShield e um antiviro open source para Windows.%n%nInclui tres motores de deteccao:%n  • ClamAV (3.6M assinaturas)%n  • YARA (23 regras)%n  • IA LightGBM (analise comportamental)%n%nRequer Windows 10 64-bit (versao 1809+)%nEspaco necessario: 500 MB%n%nClique em Avancar para continuar.
-DirLabel=Escolha a pasta de instalacao do BenguelaShield:
-ReadyLabel=Pronto para instalar o BenguelaShield no seu computador.%n%nClique em Instalar para comecar.
+WelcomeLabel2=BenguelaShield e um antiviro open source para Windows.%n%nInclui tres motores de deteccao:%n  ClamAV (3.6M assinaturas)%n  YARA (23 regras)%n  IA LightGBM (analise comportamental)%n%nRequer Windows 10 64-bit (versao 1809+)%nEspaco necessario: 500 MB%n%nClique em Avancar para continuar.
+ReadyLabel2=Pronto para instalar o BenguelaShield no seu computador.%n%nClique em Instalar para comecar.
 FinishedHeadingLabel=Instalacao Concluida com Sucesso!
 FinishedLabel=BenguelaShield foi instalado correctamente.%n%nO servico de proteccao em tempo real esta activo.%nAs assinaturas de virus estao pre-configuradas.%n%nClique em Concluir para fechar o assistente.

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import secrets
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -24,7 +25,10 @@ class AntiVirusConfig:
     clamd_port: int = 3310
     scan_timeout: int = 300
 
-    base_dir: Path = field(default_factory=lambda: Path(__file__).resolve().parent.parent.parent)
+    base_dir: Path = field(default_factory=lambda: (
+        Path(sys.executable).parent if getattr(sys, 'frozen', False)
+        else Path(__file__).resolve().parent.parent.parent
+    ))
     engine_dir: Path = field(default=None)
     quarantine_dir: Path = field(default=None)
     db_path: Path = field(default=None)
@@ -39,9 +43,10 @@ class AntiVirusConfig:
 
     def __post_init__(self) -> None:
         base = self.base_dir
+        _frozen = getattr(sys, 'frozen', False)
 
         if self.engine_dir is None:
-            self.engine_dir = base / "engine" / "clamav" / "x64"
+            self.engine_dir = base / "engine" if _frozen else base / "engine" / "clamav" / "x64"
         if self.quarantine_dir is None:
             self.quarantine_dir = base / "quarantine"
         if self.db_path is None:

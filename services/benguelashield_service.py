@@ -16,6 +16,7 @@ import os
 import sys
 import time
 import socket
+from pathlib import Path
 
 import win32api
 import win32event
@@ -201,7 +202,8 @@ import threading
 
 
 def _configurar_logging() -> None:
-    log_dir = AntiVirusConfig().base_dir / "logs"
+    programdata = os.environ.get("PROGRAMDATA", r"C:\ProgramData")
+    log_dir = Path(programdata) / "BenguelaShield" / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file = log_dir / "service.log"
 

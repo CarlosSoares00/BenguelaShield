@@ -22,9 +22,9 @@ a = Analysis(
     hiddenimports=[
         'PyQt6.QtWidgets', 'PyQt6.QtCore', 'PyQt6.QtGui',
         'PyQt6.sip',
-        'win32api', 'win32con', 'win32file', 'win32process',
+        'win32api', 'win32con', 'win32event', 'win32file', 'win32process',
         'win32security', 'win32service', 'win32serviceutil',
-        'win32timezone', 'pywintypes',
+        'win32evtlog', 'win32timezone', 'servicemanager', 'pywintypes',
         'lightgbm', 'lief', 'numpy',
         'sklearn', 'sklearn.ensemble', 'sklearn.ensemble._iforest',
         'yara', 'psutil',

@@ -1,0 +1,1 @@
+"""Raiz do pacote BenguelaShield."""

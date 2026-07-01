@@ -1,0 +1,1 @@
+"""Serviços Windows do BenguelaShield."""

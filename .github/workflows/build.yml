@@ -1,0 +1,137 @@
+name: Build and Sign BenguelaShield
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller pillow
+          pip install -r requirements.txt
+
+      - name: Build GUI (PyInstaller)
+        run: pyinstaller installer\build_gui.spec --noconfirm --clean
+
+      - name: Build Service (PyInstaller)
+        run: pyinstaller installer\build_service.spec --noconfirm --clean
+
+      - name: Prepare dist
+        run: |
+          $dirs = @(
+            "dist\BenguelaShield\engine",
+            "dist\BenguelaShield\engine\certs",
+            "dist\BenguelaShield\config",
+            "dist\BenguelaShield\db",
+            "dist\BenguelaShield\quarantine",
+            "dist\BenguelaShield\logs"
+          )
+          foreach ($d in $dirs) {
+            if (!(Test-Path $d)) { New-Item -ItemType Directory -Path $d -Force | Out-Null }
+          }
+          Copy-Item "engine\clamav\x64\*.exe" "dist\BenguelaShield\engine\" -Force
+          Copy-Item "engine\clamav\x64\*.dll" "dist\BenguelaShield\engine\" -Force
+          xcopy /s /e /y "engine\clamav\x64\certs" "dist\BenguelaShield\engine\certs\"
+          Copy-Item "engine\clamav\db\*.cvd" "dist\BenguelaShield\db\" -Force -ErrorAction SilentlyContinue
+          Copy-Item "engine\clamav\db\freshclam.dat" "dist\BenguelaShield\db\" -Force -ErrorAction SilentlyContinue
+          Copy-Item "config\clamd_runtime.conf" "dist\BenguelaShield\config\" -Force -ErrorAction SilentlyContinue
+          Copy-Item "config\freshclam.conf" "dist\BenguelaShield\config\" -Force -ErrorAction SilentlyContinue
+          Copy-Item "dist\BenguelaShieldService\BenguelaShieldService.exe" "dist\BenguelaShield\" -Force
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
+      - name: Build Installer (Inno Setup)
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (!(Test-Path $iscc)) { $iscc = "C:\Program Files\Inno Setup 6\ISCC.exe" }
+          & $iscc "installer\BenguelaShield.iss"
+
+      - name: Upload unsigned installer
+        id: upload-unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-installer
+          path: installer\Output\BenguelaShield_Setup_1.0.0.exe
+          archive: false
+
+      - name: Upload unsigned GUI
+        id: upload-gui
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-gui
+          path: dist\BenguelaShield\BenguelaShield.exe
+          archive: false
+
+      - name: Upload unsigned Service
+        id: upload-svc
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-service
+          path: dist\BenguelaShield\BenguelaShieldService.exe
+          archive: false
+
+  sign:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download unsigned installer
+        uses: actions/download-artifact@v4
+        with:
+          name: unsigned-installer
+
+      - name: Download unsigned GUI
+        uses: actions/download-artifact@v4
+        with:
+          name: unsigned-gui
+
+      - name: Download unsigned Service
+        uses: actions/download-artifact@v4
+        with:
+          name: unsigned-service
+
+      - name: Sign with SignPath (Installer)
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
+          organization-id: '${{ secrets.SIGNPATH_ORG_ID }}'
+          project-slug: 'benguelashield'
+          signing-policy-slug: 'release-signing'
+          github-artifact-id: '${{ steps.upload-unsigned.outputs.artifact-id }}'
+          wait-for-completion: true
+          output-artifact-directory: 'signed'
+
+  release:
+    needs: sign
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download signed artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: signed
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            BenguelaShield_Setup_1.0.0.exe
+          generate_release_notes: true

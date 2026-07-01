@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<artifact-configuration xmlns="http://signpath.io/xml/artifact-configuration/v1">
+  <artifact>
+    <file-list>
+      <!-- BenguelaShield Installer -->
+      <file path="BenguelaShield_Setup_1.0.0.exe" />
+    </file-list>
+  </artifact>
+</artifact-configuration>

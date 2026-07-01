@@ -1,4 +1,4 @@
-"""Configurações do módulo AntiVírus BenguelaShield."""
+"""Configuracoes do modulo AntiVirus BenguelaShield."""
 
 from __future__ import annotations
 
@@ -13,22 +13,41 @@ from pathlib import Path
 _CONFIG_ENV_PREFIX = "BENGUELA_"
 
 
+def _get_data_dir() -> Path:
+    """Devolve o directorio de dados gravaveis.
+    
+    frozen: PROGRAMDATA/BenguelaShield
+    dev: pasta raiz do projecto
+    """
+    if getattr(sys, 'frozen', False):
+        return Path(os.environ.get('PROGRAMDATA', r'C:\ProgramData')) / 'BenguelaShield'
+    return Path(__file__).resolve().parent.parent.parent
+
+
+def _get_app_dir() -> Path:
+    """Devolve o directorio da aplicacao (solo leitura em instalacao).
+    
+    frozen: directorio do .exe
+    dev: pasta raiz do projecto
+    """
+    if getattr(sys, 'frozen', False):
+        return Path(sys.executable).parent
+    return Path(__file__).resolve().parent.parent.parent
+
+
 @dataclass
 class AntiVirusConfig:
-    """Configurações centralizadas do módulo anti-vírus.
+    """Configuracoes centralizadas do modulo anti-virus.
 
-    Os valores podem ser carregados a partir de um ficheiro JSON ou
-    definidos via variáveis de ambiente com o prefixo ``BENGUELA_``.
+    Program Files: executaveis, engine, certs, regras YARA (solo leitura)
+    %PROGRAMDATA%: logs, quarantine, db, config, chave AES (gravavel)
     """
 
     clamd_host: str = "127.0.0.1"
     clamd_port: int = 3310
     scan_timeout: int = 300
 
-    base_dir: Path = field(default_factory=lambda: (
-        Path(sys.executable).parent if getattr(sys, 'frozen', False)
-        else Path(__file__).resolve().parent.parent.parent
-    ))
+    base_dir: Path = field(default_factory=_get_app_dir)
     engine_dir: Path = field(default=None)
     quarantine_dir: Path = field(default=None)
     db_path: Path = field(default=None)
@@ -42,18 +61,23 @@ class AntiVirusConfig:
     quick_scan_paths: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        base = self.base_dir
-        _frozen = getattr(sys, 'frozen', False)
-        _data = Path(os.environ.get('PROGRAMDATA', r'C:\ProgramData')) / 'BenguelaShield' if _frozen else base
+        app = self.base_dir
+        data = _get_data_dir()
+        frozen = getattr(sys, 'frozen', False)
 
+        # Engine: sempre em Program Files (so leitura)
         if self.engine_dir is None:
-            self.engine_dir = base / "engine" if _frozen else base / "engine" / "clamav" / "x64"
+            self.engine_dir = app / "engine" if frozen else app / "engine" / "clamav" / "x64"
+
+        # Dados gravaveis: sempre em %PROGRAMDATA%
         if self.quarantine_dir is None:
-            self.quarantine_dir = _data / "quarantine"
+            self.quarantine_dir = data / "quarantine"
         if self.db_path is None:
-            self.db_path = _data / "config" / "benguelashield.db"
+            self.db_path = data / "config" / "benguelashield.db"
+
+        # Configs de leitura: em Program Files
         if self.freshclam_config is None:
-            self.freshclam_config = base / "config" / "freshclam.conf"
+            self.freshclam_config = app / "config" / "freshclam.conf"
         if self.freshclam_binary is None:
             self.freshclam_binary = self.engine_dir / "freshclam.exe"
         if self.clamscan_binary is None:
@@ -75,10 +99,13 @@ class AntiVirusConfig:
             ]
             self.quick_scan_paths = [p for p in self.quick_scan_paths if p]
 
+        # So criar pastas gravaveis (em data, nunca em app)
         self.quarantine_dir.mkdir(parents=True, exist_ok=True)
+        (data / "logs").mkdir(parents=True, exist_ok=True)
+        (data / "config").mkdir(parents=True, exist_ok=True)
 
         if self.quarantine_key is None:
-            self.quarantine_key = self._load_or_create_quarantine_key(_data)
+            self.quarantine_key = self._load_or_create_quarantine_key(data)
 
         self._apply_env_overrides()
 
@@ -100,7 +127,7 @@ class AntiVirusConfig:
         return key
 
     def _apply_env_overrides(self) -> None:
-        """Aplica variáveis de ambiente com prefixo BENGUELA_."""
+        """Aplica variaveis de ambiente com prefixo BENGUELA_."""
         env_map: dict[str, str] = {
             f"{_CONFIG_ENV_PREFIX}CLAMD_HOST": "clamd_host",
             f"{_CONFIG_ENV_PREFIX}CLAMD_PORT": "clamd_port",
@@ -122,14 +149,7 @@ class AntiVirusConfig:
 
     @classmethod
     def from_file(cls, path: str | Path) -> AntiVirusConfig:
-        """Carrega configuração a partir de um ficheiro JSON.
-
-        Args:
-            path: Caminho para o ficheiro JSON de configuração.
-
-        Returns:
-            Instância de ``AntiVirusConfig`` com os valores do ficheiro.
-        """
+        """Carrega configuracao a partir de um ficheiro JSON."""
         path = Path(path)
         if not path.exists():
             return cls()
@@ -159,10 +179,8 @@ class AntiVirusConfig:
 
     def save_to_file(self, path: str | Path | None = None) -> bool:
         """Persiste a configuracao actual num ficheiro JSON."""
-        import sys
         if path is None:
-            data_dir = Path(os.environ.get('PROGRAMDATA', r'C:\ProgramData')) / 'BenguelaShield' if getattr(sys, 'frozen', False) else self.base_dir
-            path = data_dir / "config" / "benguelashield.json"
+            path = _get_data_dir() / "config" / "benguelashield.json"
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         data = {

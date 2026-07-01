@@ -1,4 +1,4 @@
-"""Configuração do módulo Anti-Ransomware."""
+"""Configuracao do modulo Anti-Ransomware."""
 
 from __future__ import annotations
 
@@ -16,9 +16,10 @@ def _data_dir() -> Path:
 
 @dataclass
 class AntiRansomConfig:
-    """Configurações do módulo anti-ransomware."""
+    """Configuracoes do modulo anti-ransomware."""
 
-    base_dir: Path = field(default_factory=lambda: _data_dir())
+    data_dir: Path = field(default_factory=_data_dir)
+    base_dir: Path = field(default=None)
 
     backup_dir: Path = field(default=None)
     backup_max_size_mb: int = 500
@@ -40,15 +41,13 @@ class AntiRansomConfig:
         "python.exe", "python3.exe", "node.exe",
         "chrome.exe", "firefox.exe", "msedge.exe",
         "clamscan.exe", "clamd.exe", "freshclam.exe",
-        "7z.exe", "winrar.exe", "explorer.exe",
+        "7z.exe", "winrar.exe",
         "pdf24.exe", "acrord32.exe", "sumatrapdf.exe",
     ])
 
     def __post_init__(self) -> None:
-        base = self.base_dir
-
         if self.backup_dir is None:
-            self.backup_dir = base / "backup"
+            self.backup_dir = _data_dir() / "antiransom" / "backup"
 
         if not self.protected_dirs:
             userprofile = os.environ.get("USERPROFILE", "")

@@ -247,7 +247,6 @@ def _configurar_logging() -> None:
     )
     handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
     logging.root.addHandler(handler)
-    logging.root.addHandler(logging.StreamHandler())
     logging.root.setLevel(logging.INFO)
 
     def _crash_hook(exc_type, exc_value, exc_tb):

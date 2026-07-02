@@ -1,4 +1,4 @@
-﻿__pycache__/
+__pycache__/
 *.pyc
 *.pyo
 *.pyd
@@ -23,3 +23,8 @@ modules/yara_engine/_gen.py
 modules/yara_engine/_gen_all.py
 config/clamd.pid
 config/exceptions.json
+config/quarantine.key
+config/admin_hash.json
+installer/Output/
+installer/Output
+_freshclam_template.conf
